@@ -19,9 +19,12 @@
     "express": "4.16.2",
     "itk": "9.1.1",
     "open": "0.0.5",
+    "string-replace-loader": "^2.1.1",
     "vtk.js": "7.3.2"
   },
   "devDependencies": {
+    "axios": "^0.18.0",
+    "babel-plugin-istanbul": "^4.1.6",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "copy-webpack-plugin": "^4.5.1",
