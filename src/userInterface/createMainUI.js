@@ -98,49 +98,6 @@ function createMainUI(
   });
   mainUIRow.appendChild(annotationButton);
 
-  const body = document.querySelector('body');
-  let fullScreenMethods = null;
-  // https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API
-  [
-    ['requestFullscreen', 'exitFullscreen', 'fullscreenchange', 'fullscreen'],
-    ['mozRequestFullScreen', 'mozCancelFullScreen', 'mozfullscreenchange', 'mozFullScreen'],
-    ['msRequestFullscreen', 'msExitFullscreen', 'MSFullscreenChange', 'msFullscreenEnabled'],
-    ['webkitRequestFullscreen', 'webkitExitFullscreen', 'webkitfullscreenchange', 'webkitIsFullScreen'],
-  ].forEach((methods) => {
-    if (body[methods[0]] && !fullScreenMethods) {
-      fullScreenMethods = methods;
-    }
-  });
-
-  if (fullScreenMethods) {
-    const fullscreenButton = document.createElement('div');
-    fullscreenButton.innerHTML = `<input id="${viewerDOMId}-toggleFullscreenButton" type="checkbox" class="${
-      style.toggleInput
-    }"><label itk-vtk-tooltip itk-vtk-tooltip-top-fullscreen itk-vtk-tooltip-content="Fullscreen [f]" class="${
-      contrastSensitiveStyle.invertibleButton
-    } ${style.fullscreenButton} ${
-      style.toggleButton
-    }" for="${viewerDOMId}-toggleFullscreenButton">${fullscreenIcon}</label>`;
-    const fullscreenButtonInput = fullscreenButton.children[0];
-    function toggleFullscreen() {
-      const fullscreenEnabled = fullscreenButtonInput.checked;
-      if (fullscreenEnabled) {
-        rootContainer[fullScreenMethods[0]]();
-      } else {
-        document[fullScreenMethods[1]]();
-      }
-    }
-    fullscreenButton.addEventListener('change', (event) => {
-      toggleFullscreen();
-    });
-    document.addEventListener(fullScreenMethods[2], (event) => {
-      if (!document[fullScreenMethods[3]]) {
-        fullscreenButtonInput.checked = false;
-      }
-    })
-    mainUIRow.appendChild(fullscreenButton);
-  }
-
   let interpolationEnabled = true;
   function toggleInterpolation() {
     interpolationEnabled = !interpolationEnabled;
@@ -158,106 +115,6 @@ function createMainUI(
     toggleInterpolation();
   });
   mainUIRow.appendChild(interpolationButton);
-
-  const croppingWidget = vtkImageCroppingRegionsWidget.newInstance();
-  croppingWidget.setHandleSize(22);
-  croppingWidget.setFaceHandlesEnabled(false);
-  croppingWidget.setEdgeHandlesEnabled(false);
-  croppingWidget.setCornerHandlesEnabled(true);
-  croppingWidget.setInteractor(view.getInteractor());
-  croppingWidget.setEnabled(false);
-  if (representation) {
-    croppingWidget.setVolumeMapper(representation.getMapper());
-  }
-  const croppingPlanesChangedHandlers = [];
-  const addCroppingPlanesChangedHandler = (handler) => {
-    const index = croppingPlanesChangedHandlers.length;
-    croppingPlanesChangedHandlers.push(handler);
-    function unsubscribe() {
-      croppingPlanesChangedHandlers[index] = null;
-    }
-    return Object.freeze({ unsubscribe });
-  };
-  let croppingUpdateInProgress = false;
-  const setCroppingPlanes = () => {
-    if (croppingUpdateInProgress) {
-      return;
-    }
-    croppingUpdateInProgress = true;
-    const planes = croppingWidget.getWidgetState().planes;
-    representation.setCroppingPlanes(planes);
-    const bboxCorners = croppingWidget.planesToBBoxCorners(planes);
-    croppingPlanesChangedHandlers.forEach((handler) => {
-      handler.call(null, planes, bboxCorners);
-    });
-    croppingUpdateInProgress = false;
-  };
-  const debouncedSetCroppingPlanes = macro.debounce(setCroppingPlanes, 100);
-  croppingWidget.onModified(debouncedSetCroppingPlanes);
-  let cropEnabled = false;
-  function toggleCrop() {
-    cropEnabled = !cropEnabled;
-    croppingWidget.setEnabled(cropEnabled);
-  }
-  const cropButton = document.createElement('div');
-  cropButton.innerHTML = `<input id="${viewerDOMId}-toggleCroppingPlanesButton" type="checkbox" class="${
-    style.toggleInput
-  }"><label itk-vtk-tooltip itk-vtk-tooltip-top itk-vtk-tooltip-content="Select ROI [w]" class="${
-    contrastSensitiveStyle.invertibleButton
-  } ${style.cropButton} ${
-    style.toggleButton
-  }" for="${viewerDOMId}-toggleCroppingPlanesButton">${cropIcon}</label>`;
-  cropButton.addEventListener('change', (event) => {
-    toggleCrop();
-  });
-  mainUIRow.appendChild(cropButton);
-
-  const resetCropButton = document.createElement('div');
-  resetCropButton.innerHTML = `<input id="${viewerDOMId}-resetCroppingPlanesButton" type="checkbox" class="${
-    style.toggleInput
-  }" checked><label itk-vtk-tooltip itk-vtk-tooltip-top itk-vtk-tooltip-content="Reset ROI [e]" class="${
-    contrastSensitiveStyle.invertibleButton
-  } ${style.resetCropButton} ${
-    style.toggleButton
-  }" for="${viewerDOMId}-resetCroppingPlanesButton">${resetCropIcon}</label>`;
-  function resetCrop() {
-    representation.getCropFilter().reset();
-    croppingWidget.resetWidgetState();
-  }
-  resetCropButton.addEventListener('change', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resetCrop();
-  });
-  resetCropButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resetCrop();
-  });
-  mainUIRow.appendChild(resetCropButton);
-
-  const resetCameraButton = document.createElement('div');
-  resetCameraButton.innerHTML = `<input id="${viewerDOMId}-resetCameraButton" type="checkbox" class="${
-    style.toggleInput
-  }" checked><label itk-vtk-tooltip itk-vtk-tooltip-top itk-vtk-tooltip-content="Reset camera [r]" class="${
-    contrastSensitiveStyle.invertibleButton
-  } ${style.resetCameraButton} ${
-    style.toggleButton
-  }" for="${viewerDOMId}-resetCameraButton">${resetCameraIcon}</label>`;
-  function resetCamera() {
-    view.resetCamera();
-  }
-  resetCameraButton.addEventListener('change', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resetCamera();
-  });
-  resetCameraButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resetCamera();
-  });
-  mainUIRow.appendChild(resetCameraButton);
 
   function setViewModeXPlane() {
     view.setViewMode('XPlane');
@@ -381,7 +238,7 @@ function createMainUI(
     const volumeRenderingButton = document.createElement('div');
     volumeRenderingButton.innerHTML = `<input id="${viewerDOMId}-volumeRenderingButton" type="checkbox" class="${
       style.toggleInput
-    }" checked><label itk-vtk-tooltip itk-vtk-tooltip-top itk-vtk-tooltip-content="Volume rendering [4]" class="${
+    }" checked><label itk-vtk-tooltip itk-vtk-tooltip-top itk-vtk-tooltip-content="Volume [4]" class="${
       contrastSensitiveStyle.tooltipButton
     } ${style.viewModeButton} ${
       style.toggleButton
@@ -389,6 +246,149 @@ function createMainUI(
     volumeRenderingButton.addEventListener('click', setViewModeVolumeRendering);
     mainUIRow.appendChild(volumeRenderingButton);
   }
+
+  const body = document.querySelector('body');
+  let fullScreenMethods = null;
+  // https://developer.mozilla.org/en-US/docs/Web/API/Fullscreen_API
+  [
+    ['requestFullscreen', 'exitFullscreen', 'fullscreenchange', 'fullscreen'],
+    ['mozRequestFullScreen', 'mozCancelFullScreen', 'mozfullscreenchange', 'mozFullScreen'],
+    ['msRequestFullscreen', 'msExitFullscreen', 'MSFullscreenChange', 'msFullscreenEnabled'],
+    ['webkitRequestFullscreen', 'webkitExitFullscreen', 'webkitfullscreenchange', 'webkitIsFullScreen'],
+  ].forEach((methods) => {
+    if (body[methods[0]] && !fullScreenMethods) {
+      fullScreenMethods = methods;
+    }
+  });
+
+  if (fullScreenMethods) {
+    const fullscreenButton = document.createElement('div');
+    fullscreenButton.innerHTML = `<input id="${viewerDOMId}-toggleFullscreenButton" type="checkbox" class="${
+      style.toggleInput
+    }"><label itk-vtk-tooltip itk-vtk-tooltip-bottom itk-vtk-tooltip-content="Fullscreen [f]" class="${
+      contrastSensitiveStyle.invertibleButton
+    } ${style.fullscreenButton} ${
+      style.toggleButton
+    }" for="${viewerDOMId}-toggleFullscreenButton">${fullscreenIcon}</label>`;
+    const fullscreenButtonInput = fullscreenButton.children[0];
+    function toggleFullscreen() {
+      const fullscreenEnabled = fullscreenButtonInput.checked;
+      if (fullscreenEnabled) {
+        rootContainer[fullScreenMethods[0]]();
+      } else {
+        document[fullScreenMethods[1]]();
+      }
+    }
+    fullscreenButton.addEventListener('change', (event) => {
+      toggleFullscreen();
+    });
+    document.addEventListener(fullScreenMethods[2], (event) => {
+      if (!document[fullScreenMethods[3]]) {
+        fullscreenButtonInput.checked = false;
+      }
+    })
+    mainUIRow.appendChild(fullscreenButton);
+  }
+
+  const croppingWidget = vtkImageCroppingRegionsWidget.newInstance();
+  croppingWidget.setHandleSize(22);
+  croppingWidget.setFaceHandlesEnabled(false);
+  croppingWidget.setEdgeHandlesEnabled(false);
+  croppingWidget.setCornerHandlesEnabled(true);
+  croppingWidget.setInteractor(view.getInteractor());
+  croppingWidget.setEnabled(false);
+  if (representation) {
+    croppingWidget.setVolumeMapper(representation.getMapper());
+  }
+  const croppingPlanesChangedHandlers = [];
+  const addCroppingPlanesChangedHandler = (handler) => {
+    const index = croppingPlanesChangedHandlers.length;
+    croppingPlanesChangedHandlers.push(handler);
+    function unsubscribe() {
+      croppingPlanesChangedHandlers[index] = null;
+    }
+    return Object.freeze({ unsubscribe });
+  };
+  let croppingUpdateInProgress = false;
+  const setCroppingPlanes = () => {
+    if (croppingUpdateInProgress) {
+      return;
+    }
+    croppingUpdateInProgress = true;
+    const planes = croppingWidget.getWidgetState().planes;
+    representation.setCroppingPlanes(planes);
+    const bboxCorners = croppingWidget.planesToBBoxCorners(planes);
+    croppingPlanesChangedHandlers.forEach((handler) => {
+      handler.call(null, planes, bboxCorners);
+    });
+    croppingUpdateInProgress = false;
+  };
+  const debouncedSetCroppingPlanes = macro.debounce(setCroppingPlanes, 100);
+  croppingWidget.onModified(debouncedSetCroppingPlanes);
+  let cropEnabled = false;
+  function toggleCrop() {
+    cropEnabled = !cropEnabled;
+    croppingWidget.setEnabled(cropEnabled);
+  }
+  const cropButton = document.createElement('div');
+  cropButton.innerHTML = `<input id="${viewerDOMId}-toggleCroppingPlanesButton" type="checkbox" class="${
+    style.toggleInput
+  }"><label itk-vtk-tooltip itk-vtk-tooltip-bottom itk-vtk-tooltip-content="Select ROI [w]" class="${
+    contrastSensitiveStyle.invertibleButton
+  } ${style.cropButton} ${
+    style.toggleButton
+  }" for="${viewerDOMId}-toggleCroppingPlanesButton">${cropIcon}</label>`;
+  cropButton.addEventListener('change', (event) => {
+    toggleCrop();
+  });
+  mainUIRow.appendChild(cropButton);
+
+  const resetCropButton = document.createElement('div');
+  resetCropButton.innerHTML = `<input id="${viewerDOMId}-resetCroppingPlanesButton" type="checkbox" class="${
+    style.toggleInput
+  }" checked><label itk-vtk-tooltip itk-vtk-tooltip-bottom itk-vtk-tooltip-content="Reset ROI [e]" class="${
+    contrastSensitiveStyle.invertibleButton
+  } ${style.resetCropButton} ${
+    style.toggleButton
+  }" for="${viewerDOMId}-resetCroppingPlanesButton">${resetCropIcon}</label>`;
+  function resetCrop() {
+    representation.getCropFilter().reset();
+    croppingWidget.resetWidgetState();
+  }
+  resetCropButton.addEventListener('change', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resetCrop();
+  });
+  resetCropButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resetCrop();
+  });
+  mainUIRow.appendChild(resetCropButton);
+
+  const resetCameraButton = document.createElement('div');
+  resetCameraButton.innerHTML = `<input id="${viewerDOMId}-resetCameraButton" type="checkbox" class="${
+    style.toggleInput
+  }" checked><label itk-vtk-tooltip itk-vtk-tooltip-bottom itk-vtk-tooltip-content="Reset camera [r]" class="${
+    contrastSensitiveStyle.invertibleButton
+  } ${style.resetCameraButton} ${
+    style.toggleButton
+  }" for="${viewerDOMId}-resetCameraButton">${resetCameraIcon}</label>`;
+  function resetCamera() {
+    view.resetCamera();
+  }
+  resetCameraButton.addEventListener('change', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resetCamera();
+  });
+  resetCameraButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resetCamera();
+  });
+  mainUIRow.appendChild(resetCameraButton);
 
   uiContainer.appendChild(mainUIGroup);
 
