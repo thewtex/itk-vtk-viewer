@@ -19,6 +19,7 @@ module.exports = function init(config) {
       require('karma-tap'),
       require('karma-chrome-launcher'),
       require('karma-firefox-launcher'),
+      require('karma-safari-applescript-launcher'),
       require('karma-tap-pretty-reporter'),
       require('karma-junit-reporter'),
     ],

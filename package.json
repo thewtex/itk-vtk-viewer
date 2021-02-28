@@ -67,6 +67,7 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-firefox-launcher": "^2.1.0",
     "karma-junit-reporter": "^2.0.1",
+    "karma-safari-applescript-launcher": "^0.1.0",
     "karma-tap": "^4.2.0",
     "karma-tap-pretty-reporter": "^4.2.0",
     "karma-webpack": "git://github.com/ryanclark/karma-webpack.git#eec6dfc",
