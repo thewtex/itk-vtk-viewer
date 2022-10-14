@@ -243,11 +243,9 @@ function createScreenshotButton(context, mainUIRow) {
 
 function _arrayLikeToArray$3(arr, len) {
   if (len == null || len > arr.length) len = arr.length
-
   for (var i = 0, arr2 = new Array(len); i < len; i++) {
     arr2[i] = arr[i]
   }
-
   return arr2
 }
 
@@ -2139,8 +2137,21 @@ function createLayerEntry(context, name, layer) {
   var layerLabel = document.createElement('label')
   layerLabel.setAttribute('class', ''.concat(style.layerLabelCommon))
   applyContrastSensitiveStyleToElement(context, 'layerLabel', layerLabel)
-  layerLabel.innerText = name
+  layerLabel.innerText = name // Above icon select
+
+  layerLabel.style.zIndex = '2500'
+  layerLabel.setAttribute('itk-vtk-tooltip', '')
+  layerLabel.setAttribute('itk-vtk-tooltip-bottom', '')
   layerEntry.appendChild(layerLabel)
+
+  function imageDescription() {
+    var multiscaleSpatialImage = context.layers.lastAddedData.data
+    var result = 'Type: '.concat(
+      JSON.stringify(multiscaleSpatialImage.imageType)
+    )
+    return result
+  }
+
   var iconElement = document.createElement('div')
 
   switch (layer.type) {
@@ -2149,6 +2160,11 @@ function createLayerEntry(context, name, layer) {
         optimizedSVGDataUri$m,
         '" alt="image"/>'
       )
+      var description = imageDescription()
+      layerLabel.setAttribute(
+        'itk-vtk-tooltip-content',
+        'Image: '.concat(name, ' ').concat(description)
+      )
       break
     }
 
@@ -2156,6 +2172,13 @@ function createLayerEntry(context, name, layer) {
       iconElement.innerHTML = '<img src="'.concat(
         optimizedSVGDataUri$j,
         '" alt="labels"/>'
+      )
+
+      var _description = imageDescription()
+
+      layerLabel.setAttribute(
+        'itk-vtk-tooltip-content',
+        'Label image: '.concat(name, ' ').concat(_description)
       )
       break
     }
@@ -2188,6 +2211,7 @@ function createLayerInterface(context, event) {
     var uiRow = layersUIGroup.children[row]
 
     if (uiRow.children.length < 2) {
+      console.log(context, name, layer)
       layerEntry = createLayerEntry(context, name, layer)
       uiRow.appendChild(layerEntry)
     }
@@ -2420,18 +2444,14 @@ function _iterableToArrayLimit(arr, i) {
       ? null
       : (typeof Symbol !== 'undefined' && arr[Symbol.iterator]) ||
         arr['@@iterator']
-
   if (_i == null) return
   var _arr = []
   var _n = true
   var _d = false
-
   var _s, _e
-
   try {
     for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
       _arr.push(_s.value)
-
       if (i && _arr.length === i) break
     }
   } catch (err) {
@@ -2444,7 +2464,6 @@ function _iterableToArrayLimit(arr, i) {
       if (_d) throw _e
     }
   }
-
   return _arr
 }
 
@@ -16540,6 +16559,7 @@ const updateColorCanvas = (
   return workCanvas
 }
 const logTransform = histogram => {
+  if (!histogram) return []
   const loged = histogram.map(v => (v === 0 ? 0 : Math.log(v)))
   const noZeros = loged.filter(Boolean)
   const min = Math.min(...noZeros)
@@ -17004,7 +17024,6 @@ function _defineProperty(obj, key, value) {
   } else {
     obj[key] = value
   }
-
   return obj
 }
 

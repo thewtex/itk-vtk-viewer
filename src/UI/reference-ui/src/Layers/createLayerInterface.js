@@ -60,16 +60,36 @@ function createLayerEntry(context, name, layer) {
   layerLabel.setAttribute('class', `${style.layerLabelCommon}`)
   applyContrastSensitiveStyleToElement(context, 'layerLabel', layerLabel)
   layerLabel.innerText = name
+  // Above icon select
+  layerLabel.style.zIndex = '2500'
+  layerLabel.setAttribute('itk-vtk-tooltip', '')
+  layerLabel.setAttribute('itk-vtk-tooltip-bottom', '')
   layerEntry.appendChild(layerLabel)
+
+  function imageDescription() {
+    const multiscaleSpatialImage = context.layers.lastAddedData.data
+    let result = `Type: ${JSON.stringify(multiscaleSpatialImage.imageType)}`
+    return result
+  }
 
   const iconElement = document.createElement('div')
   switch (layer.type) {
     case 'image': {
       iconElement.innerHTML = `<img src="${imageIconDataUri}" alt="image"/>`
+      const description = imageDescription()
+      layerLabel.setAttribute(
+        'itk-vtk-tooltip-content',
+        `Image: ${name} ${description}`
+      )
       break
     }
     case 'labelImage': {
       iconElement.innerHTML = `<img src="${labelsIconDataUri}" alt="labels"/>`
+      const description = imageDescription()
+      layerLabel.setAttribute(
+        'itk-vtk-tooltip-content',
+        `Label image: ${name} ${description}`
+      )
       break
     }
     default:
@@ -97,6 +117,7 @@ function createLayerInterface(context, event) {
   for (let row = 0; row < numRows; row++) {
     const uiRow = layersUIGroup.children[row]
     if (uiRow.children.length < 2) {
+      console.log(context, name, layer)
       layerEntry = createLayerEntry(context, name, layer)
       uiRow.appendChild(layerEntry)
     }
